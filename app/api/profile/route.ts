@@ -1,3 +1,4 @@
+// app/api/profile/route.ts
 import { auth } from "@/auth";
 import { ProfileService } from "@/lib/services/profile.service";
 import { profileUpdateSchema } from "@/lib/validations/profile";
@@ -6,12 +7,14 @@ import { NextResponse } from "next/server";
 export async function GET() {
     const session = await auth();
 
-    if (!session?.user?.id) {
+    if (!session?.user) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     try {
-        const profile = await ProfileService.getProfile(session.user.id);
+        const profile = await ProfileService.getProfile(
+            session.user.email as string
+        ); // On utilise l'email comme identifiant unique
         return NextResponse.json(profile);
     } catch (error) {
         console.error("Error fetching profile:", error);
@@ -25,7 +28,7 @@ export async function GET() {
 export async function PATCH(request: Request) {
     const session = await auth();
 
-    if (!session?.user?.id) {
+    if (!session?.user) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -34,7 +37,7 @@ export async function PATCH(request: Request) {
         const validatedData = profileUpdateSchema.parse(body);
 
         const updatedProfile = await ProfileService.updateProfile(
-            session.user.id,
+            session.user.email as string,
             validatedData
         );
 
