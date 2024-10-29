@@ -1,6 +1,6 @@
 import { auth } from "@/auth";
 import { ProfileService } from "@/lib/services/profile.service";
-import { dietaryPreferenceSchema } from "@/lib/validations/profile";
+import { allergySchema } from "@/lib/validations/profile";
 import { NextResponse } from "next/server";
 
 export async function POST(request: Request) {
@@ -12,14 +12,14 @@ export async function POST(request: Request) {
 
     try {
         const body = await request.json();
-        const validatedData = dietaryPreferenceSchema.parse(body);
+        const validatedData = allergySchema.parse(body);
 
-        const preference = await ProfileService.addDietaryPreference(
+        const allergy = await ProfileService.addAllergy(
             session.user.id,
             validatedData
         );
 
-        return NextResponse.json(preference);
+        return NextResponse.json(allergy);
     } catch (error: any) {
         if (error.name === "ZodError") {
             return NextResponse.json(
@@ -28,7 +28,7 @@ export async function POST(request: Request) {
             );
         }
 
-        console.error("Error adding preference:", error);
+        console.error("Error adding allergy:", error);
         return NextResponse.json(
             { error: "Internal server error" },
             { status: 500 }
@@ -49,15 +49,15 @@ export async function DELETE(request: Request) {
 
         if (!id) {
             return NextResponse.json(
-                { error: "Missing preference ID" },
+                { error: "Missing allergy ID" },
                 { status: 400 }
             );
         }
 
-        await ProfileService.removeDietaryPreference(session.user.id, id);
+        await ProfileService.removeAllergy(session.user.id, id);
         return NextResponse.json({ success: true });
     } catch (error) {
-        console.error("Error removing preference:", error);
+        console.error("Error removing allergy:", error);
         return NextResponse.json(
             { error: "Internal server error" },
             { status: 500 }

@@ -50,3 +50,15 @@ export type ProfileResponse = {
         severity: AllergySeverity;
     }[];
 };
+
+export type DietaryPreferenceResponse = {
+    id: string;
+    name: string;
+    description: string | null;
+};
+
+export type AllergyResponse = {
+    id: string;
+    name: string;
+    severity: AllergySeverity;
+};

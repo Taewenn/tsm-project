@@ -2,7 +2,7 @@ import ProfilePage from "@/components/profile/profile-form";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-    title: "Mon Profil | NomApp",
+    title: "Mon Profil | TasteMap",
     description:
         "Gérez vos préférences alimentaires et informations personnelles",
 };

@@ -17,6 +17,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
+import { useProfile, useUpdateProfile } from "@/hooks/use-profile";
 import type { AllergySeverity } from "@prisma/client";
 import { AlertCircle, Plus, Save, X } from "lucide-react";
 import { useState } from "react";
@@ -39,6 +40,9 @@ const commonDietaryPreferences = [
 ];
 
 export default function ProfilePage() {
+    const { data: profile, isLoading } = useProfile();
+    const { mutate: updateProfile } = useUpdateProfile();
+
     const [newPreference, setNewPreference] = useState("");
     const [newAllergy, setNewAllergy] = useState("");
     const [selectedSeverity, setSelectedSeverity] =
