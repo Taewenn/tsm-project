@@ -1,36 +1,31 @@
 import { auth } from "@/auth";
 import { ProfileService } from "@/lib/services/profile.service";
-import { allergySchema } from "@/lib/validations/profile";
 import { NextResponse } from "next/server";
+import { z } from "zod";
+
+const allergySchema = z.object({
+    name: z.string().min(1),
+    severity: z.enum(["MILD", "MODERATE", "SEVERE", "FATAL"]),
+});
 
 export async function POST(request: Request) {
     const session = await auth();
-
-    if (!session?.user?.id) {
+    if (!session?.user?.email) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     try {
         const body = await request.json();
         const validatedData = allergySchema.parse(body);
-
         const allergy = await ProfileService.addAllergy(
-            session.user.id,
+            session.user.email,
             validatedData
         );
-
         return NextResponse.json(allergy);
-    } catch (error: any) {
-        if (error.name === "ZodError") {
-            return NextResponse.json(
-                { error: "Invalid data", details: error.errors },
-                { status: 400 }
-            );
-        }
-
+    } catch (error) {
         console.error("Error adding allergy:", error);
         return NextResponse.json(
-            { error: "Internal server error" },
+            { error: "Failed to add allergy" },
             { status: 500 }
         );
     }

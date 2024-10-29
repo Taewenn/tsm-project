@@ -1,5 +1,6 @@
 "use client";
 
+import { useToast } from "@/hooks/use-toast";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
@@ -17,10 +18,17 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { useProfile, useUpdateProfile } from "@/hooks/use-profile";
+import {
+    useAddAllergy,
+    useAddDietaryPreference,
+    useProfile,
+    useRemoveAllergy,
+    useRemoveDietaryPreference,
+    useUpdateProfile,
+} from "@/hooks/use-profile";
 import type { AllergySeverity } from "@prisma/client";
-import { AlertCircle, Plus, Save, X } from "lucide-react";
-import { useState } from "react";
+import { AlertCircle, Loader2, Plus, Save, X } from "lucide-react";
+import { useEffect, useState } from "react";
 
 const allergySeverities: { value: AllergySeverity; label: string }[] = [
     { value: "MILD", label: "Léger" },
@@ -29,36 +37,154 @@ const allergySeverities: { value: AllergySeverity; label: string }[] = [
     { value: "FATAL", label: "Fatal" },
 ];
 
-const commonDietaryPreferences = [
-    "Végétarien",
-    "Végan",
-    "Sans gluten",
-    "Sans lactose",
-    "Halal",
-    "Kasher",
-    "Pescétarien",
-];
-
 export default function ProfilePage() {
+    const { toast } = useToast();
     const { data: profile, isLoading } = useProfile();
     const { mutate: updateProfile } = useUpdateProfile();
+    const { mutate: addDietaryPreference } = useAddDietaryPreference();
+    const { mutate: removeDietaryPreference } = useRemoveDietaryPreference();
+    const { mutate: addAllergy } = useAddAllergy();
+    const { mutate: removeAllergy } = useRemoveAllergy();
 
+    // Form state
+    const [name, setName] = useState("");
     const [newPreference, setNewPreference] = useState("");
     const [newAllergy, setNewAllergy] = useState("");
     const [selectedSeverity, setSelectedSeverity] =
         useState<AllergySeverity>("MODERATE");
 
+    // Initialize form with profile data
+    useEffect(() => {
+        if (profile) {
+            setName(profile.name || "");
+        }
+    }, [profile]);
+
+    const handleUpdateProfile = async () => {
+        updateProfile(
+            { name },
+            {
+                onSuccess: () => {
+                    toast({
+                        title: "Profil mis à jour",
+                        description:
+                            "Vos informations ont été enregistrées avec succès.",
+                    });
+                },
+                onError: () => {
+                    toast({
+                        title: "Erreur",
+                        description: "Impossible de mettre à jour le profil.",
+                        variant: "destructive",
+                    });
+                },
+            }
+        );
+    };
+
     const handleAddPreference = async () => {
-        // TODO: Implement API call
-        console.log("Adding preference:", newPreference);
-        setNewPreference("");
+        if (!newPreference.trim()) return;
+
+        addDietaryPreference(
+            { name: newPreference.trim() },
+            {
+                onSuccess: () => {
+                    setNewPreference("");
+                    toast({
+                        title: "Préférence ajoutée",
+                        description:
+                            "Votre préférence alimentaire a été ajoutée.",
+                    });
+                },
+                onError: () => {
+                    toast({
+                        title: "Erreur",
+                        description: "Impossible d'ajouter la préférence.",
+                        variant: "destructive",
+                    });
+                },
+            }
+        );
+    };
+
+    const handleRemovePreference = async (preferenceId: string) => {
+        removeDietaryPreference(
+            { preferenceId },
+            {
+                onSuccess: () => {
+                    toast({
+                        title: "Préférence supprimée",
+                        description:
+                            "Votre préférence alimentaire a été supprimée.",
+                    });
+                },
+                onError: () => {
+                    toast({
+                        title: "Erreur",
+                        description: "Impossible de supprimer la préférence.",
+                        variant: "destructive",
+                    });
+                },
+            }
+        );
     };
 
     const handleAddAllergy = async () => {
-        // TODO: Implement API call
-        console.log("Adding allergy:", newAllergy, selectedSeverity);
-        setNewAllergy("");
+        if (!newAllergy.trim()) return;
+
+        addAllergy(
+            {
+                name: newAllergy.trim(),
+                severity: selectedSeverity,
+            },
+            {
+                onSuccess: () => {
+                    setNewAllergy("");
+                    setSelectedSeverity("MODERATE");
+                    toast({
+                        title: "Allergie ajoutée",
+                        description: "Votre allergie a été enregistrée.",
+                    });
+                },
+                onError: () => {
+                    toast({
+                        title: "Erreur",
+                        description: "Impossible d'ajouter l'allergie.",
+                        variant: "destructive",
+                    });
+                },
+            }
+        );
     };
+
+    const handleRemoveAllergy = async (allergyId: string) => {
+        removeAllergy(
+            { allergyId },
+            {
+                onSuccess: () => {
+                    toast({
+                        title: "Allergie supprimée",
+                        description: "Votre allergie a été supprimée.",
+                    });
+                },
+                onError: () => {
+                    toast({
+                        title: "Erreur",
+                        description: "Impossible de supprimer l'allergie.",
+                        variant: "destructive",
+                    });
+                },
+            }
+        );
+    };
+
+    if (isLoading) {
+        return (
+            <div className="flex items-center justify-center min-h-screen">
+                <Loader2 className="h-8 w-8 animate-spin" />
+            </div>
+        );
+    }
 
     return (
         <div className="container mx-auto px-4 py-8">
@@ -78,7 +204,11 @@ export default function ProfilePage() {
                             <label className="block text-sm font-medium mb-1">
                                 Nom
                             </label>
-                            <Input placeholder="Votre nom" />
+                            <Input
+                                placeholder="Votre nom"
+                                value={name}
+                                onChange={(e) => setName(e.target.value)}
+                            />
                         </div>
                         <div>
                             <label className="block text-sm font-medium mb-1">
@@ -87,7 +217,7 @@ export default function ProfilePage() {
                             <Input
                                 type="email"
                                 disabled
-                                placeholder="votre@email.com"
+                                value={profile?.email || ""}
                             />
                         </div>
                     </div>
@@ -106,13 +236,16 @@ export default function ProfilePage() {
                     <div className="space-y-4">
                         {/* Liste des préférences actuelles */}
                         <div className="flex flex-wrap gap-2">
-                            {commonDietaryPreferences.map((pref) => (
+                            {profile?.dietaryPreferences?.map((pref) => (
                                 <Button
-                                    key={pref}
+                                    key={pref.id}
                                     variant="outline"
                                     className="flex items-center gap-2"
+                                    onClick={() =>
+                                        handleRemovePreference(pref.id)
+                                    }
                                 >
-                                    {pref}
+                                    {pref.name}
                                     <X className="h-4 w-4" />
                                 </Button>
                             ))}
@@ -146,7 +279,6 @@ export default function ProfilePage() {
                 </CardHeader>
                 <CardContent>
                     <div className="space-y-4">
-                        {/* Alert pour les allergies graves */}
                         <Alert variant="destructive">
                             <AlertCircle className="h-4 w-4" />
                             <AlertDescription>
@@ -158,18 +290,46 @@ export default function ProfilePage() {
 
                         {/* Liste des allergies actuelles */}
                         <div className="space-y-2">
-                            {/* TODO: Mapper les vraies allergies */}
-                            <div className="flex items-center justify-between p-2 border rounded">
-                                <span>Arachides</span>
-                                <div className="flex items-center gap-2">
-                                    <span className="text-red-500 text-sm">
-                                        Sévère
-                                    </span>
-                                    <Button variant="ghost" size="sm">
-                                        <X className="h-4 w-4" />
-                                    </Button>
+                            {profile?.allergies?.map((allergy) => (
+                                <div
+                                    key={allergy.id}
+                                    className="flex items-center justify-between p-2 border rounded"
+                                >
+                                    <span>{allergy.name}</span>
+                                    <div className="flex items-center gap-2">
+                                        <span
+                                            className={`text-sm ${
+                                                allergy.severity === "FATAL"
+                                                    ? "text-red-500"
+                                                    : allergy.severity ===
+                                                      "SEVERE"
+                                                    ? "text-orange-500"
+                                                    : allergy.severity ===
+                                                      "MODERATE"
+                                                    ? "text-yellow-500"
+                                                    : "text-green-500"
+                                            }`}
+                                        >
+                                            {
+                                                allergySeverities.find(
+                                                    (s) =>
+                                                        s.value ===
+                                                        allergy.severity
+                                                )?.label
+                                            }
+                                        </span>
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            onClick={() =>
+                                                handleRemoveAllergy(allergy.id)
+                                            }
+                                        >
+                                            <X className="h-4 w-4" />
+                                        </Button>
+                                    </div>
                                 </div>
-                            </div>
+                            ))}
                         </div>
 
                         {/* Ajouter une allergie */}
@@ -211,7 +371,10 @@ export default function ProfilePage() {
             </Card>
 
             <div className="flex justify-end">
-                <Button className="w-full sm:w-auto">
+                <Button
+                    className="w-full sm:w-auto"
+                    onClick={handleUpdateProfile}
+                >
                     <Save className="h-4 w-4 mr-2" />
                     Enregistrer les modifications
                 </Button>

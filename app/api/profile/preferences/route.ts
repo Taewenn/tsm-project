@@ -6,7 +6,7 @@ import { NextResponse } from "next/server";
 export async function POST(request: Request) {
     const session = await auth();
 
-    if (!session?.user?.id) {
+    if (!session?.user.email) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -15,7 +15,7 @@ export async function POST(request: Request) {
         const validatedData = dietaryPreferenceSchema.parse(body);
 
         const preference = await ProfileService.addDietaryPreference(
-            session.user.id,
+            session.user.email,
             validatedData
         );
 
