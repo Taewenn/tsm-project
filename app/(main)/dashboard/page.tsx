@@ -1,3 +1,5 @@
+"use client";
+
 import { Button } from "@/components/ui/button";
 import {
     Card,
@@ -7,17 +9,83 @@ import {
     CardTitle,
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { toast } from "@/hooks/use-toast";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { AlertTriangle, Calendar, Plus, Users } from "lucide-react";
-import React from "react";
+
+// Hooks personnalisés pour la gestion des données
+const useDashboardStats = () => {
+    return useQuery({
+        queryKey: ["dashboardStats"],
+        queryFn: async () => {
+            const response = await fetch("/api/dashboard");
+            if (!response.ok) {
+                throw new Error("Erreur lors du chargement des statistiques");
+            }
+            return response.json();
+        },
+    });
+};
+
+const useUpcomingEvents = () => {
+    return useQuery({
+        queryKey: ["upcomingEvents"],
+        queryFn: async () => {
+            const response = await fetch("/api/events/upcoming");
+            if (!response.ok) {
+                throw new Error(
+                    "Erreur lors du chargement des événements à venir"
+                );
+            }
+            return response.json();
+        },
+    });
+};
+
+const usePendingInvitations = () => {
+    return useQuery({
+        queryKey: ["pendingInvitations"],
+        queryFn: async () => {
+            const response = await fetch("/api/invitations/pending");
+            if (!response.ok) {
+                throw new Error("Erreur lors du chargement des invitations");
+            }
+            return response.json();
+        },
+    });
+};
+
+const usePastEvents = () => {
+    return useQuery({
+        queryKey: ["pastEvents"],
+        queryFn: async () => {
+            const response = await fetch("/api/events/past");
+            if (!response.ok) {
+                throw new Error(
+                    "Erreur lors du chargement des événements passés"
+                );
+            }
+            return response.json();
+        },
+    });
+};
 
 // Composant principal du Dashboard
 export default function DashboardPage() {
+    const { data: stats, isLoading: isLoadingStats } = useDashboardStats();
+
+    if (isLoadingStats) {
+        return <DashboardSkeleton />;
+    }
+
     return (
         <div className="flex-1 space-y-4 p-4 pt-6">
             <div className="flex items-center justify-between space-y-2">
                 <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
                 <div className="flex items-center space-x-2">
-                    <Button>
+                    <Button
+                        onClick={() => (window.location.href = "/events/new")}
+                    >
                         <Plus className="mr-2 h-4 w-4" />
                         Nouvel événement
                     </Button>
@@ -28,7 +96,7 @@ export default function DashboardPage() {
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                 <StatsCard
                     title="Événements à venir"
-                    value="3"
+                    value={stats?.upcomingEventsCount || "0"}
                     description="Dans les 30 prochains jours"
                     icon={
                         <Calendar className="h-4 w-4 text-muted-foreground" />
@@ -36,19 +104,19 @@ export default function DashboardPage() {
                 />
                 <StatsCard
                     title="Invitations en attente"
-                    value="12"
+                    value={stats?.pendingInvitationsCount || "0"}
                     description="Réponses attendues"
                     icon={<Users className="h-4 w-4 text-muted-foreground" />}
                 />
                 <StatsCard
                     title="Allergies à gérer"
-                    value="2"
+                    value={stats?.allergiesCount || "0"}
                     description="Attention particulière requise"
                     icon={<AlertTriangle className="h-4 w-4 text-red-500" />}
                 />
                 <StatsCard
                     title="Événements passés"
-                    value="8"
+                    value={stats?.pastEventsCount || "0"}
                     description="Dans les 30 derniers jours"
                     icon={
                         <Calendar className="h-4 w-4 text-muted-foreground" />
@@ -77,6 +145,27 @@ export default function DashboardPage() {
     );
 }
 
+function DashboardSkeleton() {
+    return (
+        <div className="flex-1 space-y-4 p-4 pt-6">
+            <div className="flex items-center justify-between space-y-2">
+                <div className="h-8 w-48 bg-gray-200 rounded animate-pulse" />
+                <div className="h-10 w-40 bg-gray-200 rounded animate-pulse" />
+            </div>
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                {[1, 2, 3, 4].map((i) => (
+                    <Card key={i} className="animate-pulse">
+                        <CardHeader className="space-y-2">
+                            <div className="h-4 w-24 bg-gray-200 rounded" />
+                            <div className="h-8 w-12 bg-gray-200 rounded" />
+                        </CardHeader>
+                    </Card>
+                ))}
+            </div>
+        </div>
+    );
+}
+
 // Composant StatsCard réutilisable
 type StatsCardProps = {
     title: string;
@@ -100,25 +189,57 @@ function StatsCard({ title, value, description, icon }: StatsCardProps) {
     );
 }
 
-// Liste des événements à venir
+// Liste des événements à venir avec données
 function UpcomingEventsList() {
+    const { data: events, isLoading, error } = useUpcomingEvents();
+
+    if (isLoading) {
+        return <LoadingCards count={3} />;
+    }
+
+    if (error) {
+        return (
+            <ErrorMessage message="Impossible de charger les événements à venir" />
+        );
+    }
+
+    if (!events?.length) {
+        return <EmptyState message="Aucun événement à venir" />;
+    }
+
     return (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {[1, 2, 3].map((event) => (
-                <Card key={event}>
+            {events.map((event: any) => (
+                <Card key={event.id}>
                     <CardHeader>
-                        <CardTitle>Dîner chez Marie</CardTitle>
-                        <CardDescription>12 Mars 2024 - 19h00</CardDescription>
+                        <CardTitle>{event.title}</CardTitle>
+                        <CardDescription>
+                            {new Date(event.dateTime).toLocaleDateString(
+                                "fr-FR",
+                                {
+                                    day: "numeric",
+                                    month: "long",
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                }
+                            )}
+                        </CardDescription>
                     </CardHeader>
                     <CardContent>
                         <div className="flex justify-between items-center">
                             <div className="flex items-center space-x-2">
                                 <Users className="h-4 w-4 text-muted-foreground" />
                                 <span className="text-sm text-muted-foreground">
-                                    8 invités
+                                    {event.attendees.length} invités
                                 </span>
                             </div>
-                            <Button variant="outline" size="sm">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() =>
+                                    (window.location.href = `/events/${event.id}`)
+                                }
+                            >
                                 Voir détails
                             </Button>
                         </div>
@@ -129,22 +250,79 @@ function UpcomingEventsList() {
     );
 }
 
-// Liste des invitations en attente
+// Liste des invitations en attente avec données
 function PendingInvitationsList() {
+    const { data: invitations, isLoading, error } = usePendingInvitations();
+    const queryClient = useQueryClient();
+
+    const handleResponse = async (invitationId: string, status: string) => {
+        try {
+            const response = await fetch(
+                `/api/invitations/${invitationId}/respond`,
+                {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ status }),
+                }
+            );
+
+            if (!response.ok) throw new Error("Erreur lors de la réponse");
+
+            await queryClient.invalidateQueries({
+                queryKey: ["pendingInvitations"],
+            });
+            await queryClient.invalidateQueries({
+                queryKey: ["dashboardStats"],
+            });
+
+            toast({
+                title: "Réponse envoyée",
+                description: "Votre réponse a bien été prise en compte.",
+            });
+        } catch (error) {
+            toast({
+                title: "Erreur",
+                description: "Impossible de répondre à l'invitation.",
+                variant: "destructive",
+            });
+        }
+    };
+
+    if (isLoading) {
+        return <LoadingCards count={2} />;
+    }
+
+    if (error) {
+        return <ErrorMessage message="Impossible de charger les invitations" />;
+    }
+
+    if (!invitations?.length) {
+        return <EmptyState message="Aucune invitation en attente" />;
+    }
+
     return (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {[1, 2].map((invitation) => (
-                <Card key={invitation}>
+            {invitations.map((invitation: any) => (
+                <Card key={invitation.id}>
                     <CardHeader>
-                        <CardTitle>BBQ chez Thomas</CardTitle>
-                        <CardDescription>15 Mars 2024 - 12h30</CardDescription>
+                        <CardTitle>{invitation.event.title}</CardTitle>
+                        <CardDescription>
+                            {new Date(
+                                invitation.event.dateTime
+                            ).toLocaleDateString("fr-FR", {
+                                day: "numeric",
+                                month: "long",
+                                hour: "2-digit",
+                                minute: "2-digit",
+                            })}
+                        </CardDescription>
                     </CardHeader>
                     <CardContent>
                         <div className="flex flex-col space-y-2">
                             <div className="flex items-center space-x-2">
                                 <Users className="h-4 w-4 text-muted-foreground" />
                                 <span className="text-sm text-muted-foreground">
-                                    12 invités
+                                    {invitation.event.attendees.length} invités
                                 </span>
                             </div>
                             <div className="flex space-x-2">
@@ -152,6 +330,12 @@ function PendingInvitationsList() {
                                     className="flex-1"
                                     variant="default"
                                     size="sm"
+                                    onClick={() =>
+                                        handleResponse(
+                                            invitation.id,
+                                            "CONFIRMED"
+                                        )
+                                    }
                                 >
                                     Accepter
                                 </Button>
@@ -159,6 +343,12 @@ function PendingInvitationsList() {
                                     className="flex-1"
                                     variant="outline"
                                     size="sm"
+                                    onClick={() =>
+                                        handleResponse(
+                                            invitation.id,
+                                            "DECLINED"
+                                        )
+                                    }
                                 >
                                     Décliner
                                 </Button>
@@ -173,9 +363,25 @@ function PendingInvitationsList() {
 
 // Liste des événements passés
 function PastEventsList() {
+    const { data: events, isLoading, error } = usePastEvents();
+
+    if (isLoading) {
+        return <LoadingCards count={3} />;
+    }
+
+    if (error) {
+        return (
+            <ErrorMessage message="Impossible de charger les événements passés" />
+        );
+    }
+
+    if (!events?.length) {
+        return <EmptyState message="Aucun événement passé" />;
+    }
+
     return (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {[1, 2, 3].map((event) => (
+            {events.map((event: any) => (
                 <Card key={event}>
                     <CardHeader>
                         <CardTitle>Soirée Jeux</CardTitle>
@@ -196,6 +402,47 @@ function PastEventsList() {
                     </CardContent>
                 </Card>
             ))}
+        </div>
+    );
+}
+
+// Composants utilitaires
+function LoadingCards({ count = 3 }) {
+    return (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {Array(count)
+                .fill(0)
+                .map((_, i) => (
+                    <Card key={i} className="animate-pulse">
+                        <CardHeader className="space-y-2">
+                            <div className="h-4 w-3/4 bg-gray-200 rounded" />
+                            <div className="h-3 w-1/2 bg-gray-200 rounded" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="h-8 w-full bg-gray-200 rounded" />
+                        </CardContent>
+                    </Card>
+                ))}
+        </div>
+    );
+}
+
+function ErrorMessage({ message }: { message: string }) {
+    return (
+        <div className="flex flex-col items-center justify-center p-8 text-center">
+            <AlertTriangle className="h-8 w-8 text-red-500 mb-4" />
+            <p className="text-lg font-medium text-red-500">{message}</p>
+        </div>
+    );
+}
+
+function EmptyState({ message }: { message: string }) {
+    return (
+        <div className="flex flex-col items-center justify-center p-8 text-center">
+            <Calendar className="h-8 w-8 text-muted-foreground mb-4" />
+            <p className="text-lg font-medium text-muted-foreground">
+                {message}
+            </p>
         </div>
     );
 }
