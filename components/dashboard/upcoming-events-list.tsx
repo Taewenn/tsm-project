@@ -1,4 +1,3 @@
-import { useUpcomingEvents } from "@/hooks/use-upcoming-events";
 import { Users } from "lucide-react";
 import EmptyState from "../global/empty-state";
 import ErrorMessage from "../global/error-message";
@@ -11,6 +10,7 @@ import {
     CardHeader,
     CardTitle,
 } from "../ui/card";
+import { useUpcomingEvents } from "@/hooks/use-upcoming-events";
 
 function UpcomingEventsList() {
     const { data: events, isLoading, error } = useUpcomingEvents();
