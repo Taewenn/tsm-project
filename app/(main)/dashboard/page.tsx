@@ -11,7 +11,7 @@ import { useDashboardStats } from "@/hooks/use-dashboard-stats";
 import { AlertTriangle, Calendar, Users } from "lucide-react";
 
 export default function DashboardPage() {
-    const { data: stats, isLoading: isLoadingStats } = useDashboardStats();
+    const { data, isLoading: isLoadingStats } = useDashboardStats();
 
     if (isLoadingStats) {
         return <DashboardSkeleton />;
@@ -27,36 +27,42 @@ export default function DashboardPage() {
             </div>
 
             {/* Stats Cards */}
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                <StatsCard
-                    title="Événements à venir"
-                    value={stats?.upcomingEventsCount || "0"}
-                    description="Dans les 30 prochains jours"
-                    icon={
-                        <Calendar className="h-4 w-4 text-muted-foreground" />
-                    }
-                />
-                <StatsCard
-                    title="Invitations en attente"
-                    value={stats?.pendingInvitationsCount || "0"}
-                    description="Réponses attendues"
-                    icon={<Users className="h-4 w-4 text-muted-foreground" />}
-                />
-                <StatsCard
-                    title="Allergies à gérer"
-                    value={stats?.allergiesCount || "0"}
-                    description="Attention particulière requise"
-                    icon={<AlertTriangle className="h-4 w-4 text-red-500" />}
-                />
-                <StatsCard
-                    title="Événements passés"
-                    value={stats?.pastEventsCount || "0"}
-                    description="Dans les 30 derniers jours"
-                    icon={
-                        <Calendar className="h-4 w-4 text-muted-foreground" />
-                    }
-                />
-            </div>
+            {data && (
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                    <StatsCard
+                        title="Événements à venir"
+                        value={data.stats.hostedEventsCount}
+                        description="Dans les 30 prochains jours"
+                        icon={
+                            <Calendar className="h-4 w-4 text-muted-foreground" />
+                        }
+                    />
+                    <StatsCard
+                        title="Invitations en attente"
+                        value={data.stats.pendingInvitationsCount}
+                        description="Réponses attendues"
+                        icon={
+                            <Users className="h-4 w-4 text-muted-foreground" />
+                        }
+                    />
+                    <StatsCard
+                        title="Allergies à gérer"
+                        value={data.stats.allergiesCount}
+                        description="Attention particulière requise"
+                        icon={
+                            <AlertTriangle className="h-4 w-4 text-red-500" />
+                        }
+                    />
+                    <StatsCard
+                        title="Événements passés"
+                        value={data.stats.pastEventsCount}
+                        description="Dans les 30 derniers jours"
+                        icon={
+                            <Calendar className="h-4 w-4 text-muted-foreground" />
+                        }
+                    />
+                </div>
+            )}
 
             {/* Main Content Tabs */}
             <Tabs defaultValue="upcoming" className="space-y-4">

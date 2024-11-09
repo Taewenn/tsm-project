@@ -3,26 +3,51 @@ import { CreateEventDTO } from "../validations/event";
 
 export class DashboardService {
     static async getDashboardStats(userId: string) {
-        return prisma.user.findUnique({
-            where: { id: userId },
-            select: {
-                hostedEvents: {
-                    where: {
-                        dateTime: { gte: new Date() },
+        const [
+            hostedEventsCount,
+            pendingInvitationsCount,
+            allergiesCount,
+            pastEventsCount,
+        ] = await Promise.all([
+            // Count des événements à venir
+            prisma.event.count({
+                where: {
+                    hostId: userId,
+                    dateTime: {
+                        gte: new Date(),
                     },
                 },
-                attendances: {
-                    where: {
-                        status: "PENDING",
+            }),
+            // Count des invitations en attente
+            prisma.eventAttendee.count({
+                where: {
+                    userId,
+                    status: "PENDING",
+                },
+            }),
+            // Count des allergies
+            prisma.allergy.count({
+                where: {
+                    userId,
+                },
+            }),
+            // Count des événements passés
+            prisma.event.count({
+                where: {
+                    hostId: userId,
+                    dateTime: {
+                        lt: new Date(),
                     },
                 },
-                allergies: {
-                    orderBy: {
-                        createdAt: "desc",
-                    },
-                },
-            },
-        });
+            }),
+        ]);
+
+        return {
+            hostedEventsCount,
+            pendingInvitationsCount,
+            allergiesCount,
+            pastEventsCount,
+        };
     }
 
     static async getUpcomingEvents(userId: string) {
