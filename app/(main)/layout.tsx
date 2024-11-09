@@ -1,5 +1,7 @@
 "use client";
 
+import { AppSidebar } from "@/components/global/app-sidebar";
+import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 const queryClient = new QueryClient();
@@ -11,7 +13,13 @@ export default function MainLayout({
 }) {
     return (
         <QueryClientProvider client={queryClient}>
-            {children}
+            <SidebarProvider>
+                <AppSidebar />
+                <main className="w-full">
+                    <SidebarTrigger />
+                    {children}
+                </main>
+            </SidebarProvider>
         </QueryClientProvider>
     );
 }
