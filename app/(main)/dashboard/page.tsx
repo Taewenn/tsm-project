@@ -1,14 +1,14 @@
 "use client";
 
+import { CreateNewEvent } from "@/components/dashboard/create-new-event";
 import PastEventsList from "@/components/dashboard/past-events-list";
 import PendingInvitationsList from "@/components/dashboard/pending-invitations-list";
 import UpcomingEventsList from "@/components/dashboard/upcoming-events-list";
 import StatsCard from "@/components/global/stats-card";
-import { Button } from "@/components/ui/button";
 import { Card, CardHeader } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useDashboardStats } from "@/hooks/use-dashboard-stats";
-import { AlertTriangle, Calendar, Plus, Users } from "lucide-react";
+import { AlertTriangle, Calendar, Users } from "lucide-react";
 
 export default function DashboardPage() {
     const { data: stats, isLoading: isLoadingStats } = useDashboardStats();
@@ -22,12 +22,7 @@ export default function DashboardPage() {
             <div className="flex items-center justify-between space-y-2">
                 <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
                 <div className="flex items-center space-x-2">
-                    <Button
-                        onClick={() => (window.location.href = "/events/new")}
-                    >
-                        <Plus className="mr-2 h-4 w-4" />
-                        Nouvel événement
-                    </Button>
+                    <CreateNewEvent />
                 </div>
             </div>
 

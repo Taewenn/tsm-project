@@ -48,4 +48,22 @@ export class DashboardService {
             take: 6,
         });
     }
+
+    static async createNewEvent(userId: string, data: any) {
+        return prisma.event.create({
+            data: {
+                title: data.title,
+                description: data.description,
+                dateTime: data.dateTime,
+                location: data.location,
+                host: {
+                    connect: {
+                        id: userId,
+                    },
+                },
+                maxGuests: data.maxGuests,
+                invitationLink: data.invitationLink,
+            },
+        });
+    }
 }
