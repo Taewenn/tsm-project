@@ -1,6 +1,5 @@
-// hooks/use-profile.ts
-import type { AllergySeverity } from "@prisma/client";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { AllergySeverity } from "./../node_modules/.pnpm/@prisma+client@5.22.0_prisma@5.22.0/node_modules/.prisma/client/index.d";
 
 interface Profile {
     id: string;
