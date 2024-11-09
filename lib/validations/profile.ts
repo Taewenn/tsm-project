@@ -1,4 +1,3 @@
-// lib/validations/profile.ts
 import { AllergySeverity } from "@prisma/client";
 import { z } from "zod";
 

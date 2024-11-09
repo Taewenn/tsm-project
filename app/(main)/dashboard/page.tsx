@@ -1,6 +1,6 @@
 "use client";
 
-import { CreateNewEvent } from "@/components/dashboard/create-new-event";
+import CreateNewEvent from "@/components/dashboard/create-new-event";
 import PastEventsList from "@/components/dashboard/past-events-list";
 import PendingInvitationsList from "@/components/dashboard/pending-invitations-list";
 import UpcomingEventsList from "@/components/dashboard/upcoming-events-list";

@@ -1,4 +1,5 @@
 import { prisma } from "@/prisma";
+import { CreateEventDTO } from "../validations/event";
 
 export class DashboardService {
     static async getDashboardStats(userId: string) {
@@ -49,18 +50,20 @@ export class DashboardService {
         });
     }
 
-    static async createNewEvent(userId: string, data: any) {
+    static async createNewEvent(userId: string, data: CreateEventDTO) {
+        // Convert the dateTime string to a proper ISO date string
+        // Add seconds and milliseconds to meet ISO-8601 format
+        const formattedDateTime = new Date(
+            `${data.dateTime}:00.000Z`
+        ).toISOString();
+
         return prisma.event.create({
             data: {
                 title: data.title,
                 description: data.description,
-                dateTime: data.dateTime,
+                dateTime: formattedDateTime,
                 location: data.location,
-                host: {
-                    connect: {
-                        id: userId,
-                    },
-                },
+                hostId: userId,
                 maxGuests: data.maxGuests,
                 invitationLink: data.invitationLink,
             },
